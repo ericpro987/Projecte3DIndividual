@@ -1,8 +1,6 @@
-using Unity.Collections;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.Rendering.HighDefinition;
-using UnityEngine.UIElements;
 
 [RequireComponent(typeof(CharacterController))]
 
@@ -51,14 +49,14 @@ public class Player : MonoBehaviour
     }
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
-    { 
+    {
         look.performed += Look;
         run.started += Sprint;
         run.performed += Sprint;
-        run.canceled+=  CancelSprint;
+        run.canceled += CancelSprint;
         shoot1.started += Shoot1;
         shoot2.started += Shoot2;
-        shoot2.performed += Shoot2;
+        shoot2.canceled += ExitShoot2;
     }
 
     // Update is called once per frame
@@ -69,33 +67,34 @@ public class Player : MonoBehaviour
         {
             velY -= gravity * Time.deltaTime;
         }
-        if(!wait)
-        Movement();
+        if (!wait)
+            Movement();
+
 
     }
     public void Look(InputAction.CallbackContext context)
     {
         Vector2 lookInput = look.ReadValue<Vector2>();
-       _LookRotation.y += lookInput.y * _LookVelocity * Time.deltaTime;
-        _LookRotation.y = Mathf.Clamp(_LookRotation.y, -60, 60); 
-        transform.Rotate(0, look.ReadValue<Vector2>().x,0);
+        _LookRotation.y += lookInput.y * _LookVelocity * Time.deltaTime;
+        _LookRotation.y = Mathf.Clamp(_LookRotation.y, -60, 60);
+        transform.Rotate(0, look.ReadValue<Vector2>().x, 0);
         cam.transform.localRotation = Quaternion.Euler(-_LookRotation.y, 0, 0);
     }
     public void Movement()
     {
-        
+
 
         Vector2 movimentInput = move.ReadValue<Vector2>();
 
-        Vector3 moviment2 = transform.right * movimentInput.x + transform.forward*movimentInput.y;
+        Vector3 moviment2 = transform.right * movimentInput.x + transform.forward * movimentInput.y;
         moviment2.y = velY;
         moviment2 = moviment2.normalized * spd;
-        this.cc.Move(moviment2*Time.deltaTime);
+        this.cc.Move(moviment2 * Time.deltaTime);
     }
 
     void Sprint(InputAction.CallbackContext context)
     {
-            spd = 10;
+        spd = 10;
     }
     void CancelSprint(InputAction.CallbackContext context)
     {
@@ -104,7 +103,7 @@ public class Player : MonoBehaviour
 
     void Shoot1(InputAction.CallbackContext context)
     {
-        if(Physics.Raycast(cam.transform.position, cam.transform.forward, out RaycastHit hit, 20f, Shoot1Mask))
+        if (Physics.Raycast(cam.transform.position, cam.transform.forward, out RaycastHit hit, 20f, Shoot1Mask))
         {
 
         }
@@ -117,7 +116,22 @@ public class Player : MonoBehaviour
             wait = true;
             Vector3 dir = hit.point - this.transform.position;
             dir = dir.normalized * 7;
+            StartCoroutine(HookMove(dir));
         }
+    }
+    IEnumerator HookMove(Vector3 dir)
+    {
+        while(wait && this.transform.position.x != dir.x && transform.position.z!=dir.z)
+        {
+            cc.Move(dir*Time.deltaTime);
+            yield return new WaitForSeconds(Time.deltaTime);
+        }
+        
+    }
+    void ExitShoot2(InputAction.CallbackContext context)
+    {
+        wait = false;
+        StopAllCoroutines();
     }
 }
 
