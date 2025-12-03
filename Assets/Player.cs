@@ -16,6 +16,7 @@ public class Player : MonoBehaviour
     InputAction run;
     InputAction shoot1;
     InputAction shoot2;
+    InputAction jump;
     [SerializeField]
     LayerMask Shoot1Mask;
     [SerializeField]
@@ -45,11 +46,14 @@ public class Player : MonoBehaviour
 
         shoot2 = action.Player.Shoot2;
 
+        jump = action.Player.Jump;
+
         action.Enable();
     }
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
+        jump.started += Jump;
         look.performed += Look;
         run.started += Sprint;
         run.performed += Sprint;
@@ -108,30 +112,47 @@ public class Player : MonoBehaviour
 
         }
     }
+    float dist;
+    Vector3 hitPoint;
     void Shoot2(InputAction.CallbackContext context)
     {
         if (Physics.Raycast(cam.transform.position, cam.transform.forward, out RaycastHit hit, 20f, Shoot2Mask))
         {
+             dist = Vector3.Distance(hit.point, this.transform.position);
             Debug.DrawLine(cam.transform.position, hit.point, Color.red, 4f);
             wait = true;
             Vector3 dir = hit.point - this.transform.position;
+            hitPoint = hit.point;
             dir = dir.normalized * 7;
             StartCoroutine(HookMove(dir));
+
         }
     }
     IEnumerator HookMove(Vector3 dir)
     {
-        while(wait && this.transform.position.x != dir.x && transform.position.z!=dir.z)
+        while(wait && Vector3.Distance(hitPoint, this.transform.position)>0.9f)
         {
             cc.Move(dir*Time.deltaTime);
             yield return new WaitForSeconds(Time.deltaTime);
         }
         
     }
-    void ExitShoot2(InputAction.CallbackContext context)
+    void Jump(InputAction.CallbackContext context)
     {
+        if (cc.isGrounded)
+        {
+            velY = 5f;
+        }
+    }
+    void ExitShoot2Func()
+    {
+        Debug.Log("Arnau es gay");
         wait = false;
         StopAllCoroutines();
+    }
+    void ExitShoot2(InputAction.CallbackContext context)
+    {
+        ExitShoot2Func();
     }
 }
 
