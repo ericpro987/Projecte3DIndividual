@@ -69,7 +69,7 @@ public class Player : MonoBehaviour
         Debug.Log($"Esta tocando suelo? {cc.isGrounded}");
         if (!cc.isGrounded)
         {
-            velY -= gravity * Time.deltaTime;
+            velY -= gravity* 2f * Time.deltaTime;
         }
         if (!wait)
             Movement();
@@ -81,7 +81,7 @@ public class Player : MonoBehaviour
         Vector2 lookInput = look.ReadValue<Vector2>();
         _LookRotation.y += lookInput.y * _LookVelocity * Time.deltaTime;
         _LookRotation.y = Mathf.Clamp(_LookRotation.y, -60, 60);
-        transform.Rotate(0, look.ReadValue<Vector2>().x, 0);
+        transform.Rotate(0, lookInput.x, 0);
         cam.transform.localRotation = Quaternion.Euler(-_LookRotation.y, 0, 0);
     }
     public void Movement()
@@ -90,9 +90,9 @@ public class Player : MonoBehaviour
 
         Vector2 movimentInput = move.ReadValue<Vector2>();
 
-        Vector3 moviment2 = transform.right * movimentInput.x + transform.forward * movimentInput.y;
+        Vector3 moviment2 = (transform.right * movimentInput.x + transform.forward * movimentInput.y).normalized;
         moviment2.y = velY;
-        moviment2 = moviment2.normalized * spd;
+        moviment2 = moviment2 * spd;
         this.cc.Move(moviment2 * Time.deltaTime);
     }
 
@@ -109,7 +109,11 @@ public class Player : MonoBehaviour
     {
         if (Physics.Raycast(cam.transform.position, cam.transform.forward, out RaycastHit hit, 20f, Shoot1Mask))
         {
-
+            /* if(hit.transform.TryGetComponent<Enemy>(out Enemy e))
+             {
+                 e.ReceiveDamage();
+             }*/
+            Debug.Log("Ay");
         }
     }
     float dist;
@@ -130,7 +134,7 @@ public class Player : MonoBehaviour
     }
     IEnumerator HookMove(Vector3 dir)
     {
-        while(wait && Vector3.Distance(hitPoint, this.transform.position)>0.9f)
+        while(wait &&  Mathf.Abs(Vector3.Distance(hitPoint, this.transform.position))>1f)
         {
             cc.Move(dir*Time.deltaTime);
             yield return new WaitForSeconds(Time.deltaTime);
@@ -139,8 +143,23 @@ public class Player : MonoBehaviour
     }
     void Jump(InputAction.CallbackContext context)
     {
+        /*if (cc.isGrounded)
+        {
+            float u = 5 / this.GetComponent<Rigidbody>().mass;
+            float t = 2 * u / Physics.gravity.magnitude;
+            Vector3 AB = (cam.transform.forward + cam.transform.forward * 0) - cam.transform.forward;
+            Vector3 h = AB / t;
+            Vector3 H = h * this.GetComponent<Rigidbody>().mass;
+            Vector3 F = H + 0 * Vector3.up;
+            F.Normalize();
+            cc.velocity.Set(F.x, F.y, F.z);
+            cc.Move(cc.velocity*Time.deltaTime);
+
+        }*/
         if (cc.isGrounded)
         {
+            Debug.Log("Estamos en el suelo.");
+
             velY = 5f;
         }
     }
