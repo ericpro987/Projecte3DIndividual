@@ -9,7 +9,7 @@ public class Player : MonoBehaviour
     [SerializeField] private float _LookVelocity = 100;
     private Vector2 _LookRotation = Vector2.zero;
 
-    InputSystem_Actions action;
+    public InputSystem_Actions action;
     CharacterController cc;
     InputAction move;
     InputAction look;
@@ -17,12 +17,15 @@ public class Player : MonoBehaviour
     InputAction shoot1;
     InputAction shoot2;
     InputAction jump;
+    InputAction robot;
     [SerializeField]
     LayerMask Shoot1Mask;
     [SerializeField]
     LayerMask Shoot2Mask;
     [SerializeField]
     private Camera cam;
+    [SerializeField]
+    RobotBomb robotBomb;
     float gravity = 9.8f;
     float velY;
     bool wait = false;
@@ -48,7 +51,9 @@ public class Player : MonoBehaviour
 
         jump = action.Player.Jump;
 
-        action.Enable();
+        robot = action.Player.RobotBomb;
+
+        action.Player.Enable();
     }
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -61,6 +66,7 @@ public class Player : MonoBehaviour
         shoot1.started += Shoot1;
         shoot2.started += Shoot2;
         shoot2.canceled += ExitShoot2;
+        robot.started += ActivateRobot;
     }
 
     // Update is called once per frame
@@ -69,7 +75,7 @@ public class Player : MonoBehaviour
         Debug.Log($"Esta tocando suelo? {cc.isGrounded}");
         if (!cc.isGrounded)
         {
-            velY -= gravity* 2f * Time.deltaTime;
+            velY -= gravity * 1f * Time.deltaTime;
         }
         if (!wait)
             Movement();
@@ -109,13 +115,18 @@ public class Player : MonoBehaviour
     {
         if (Physics.Raycast(cam.transform.position, cam.transform.forward, out RaycastHit hit, 20f, Shoot1Mask))
         {
-            /* if(hit.transform.TryGetComponent<Enemy>(out Enemy e))
+            Debug.DrawLine(cam.transform.position, hit.point, Color.red, 4f);
+
+            if (hit.transform.TryGetComponent<EnemyScript>(out EnemyScript e))
              {
-                 e.ReceiveDamage();
-             }*/
-            Debug.Log("Ay");
+                 e.ReceiveDamage(2);
+             }
         }
     }
+   /* public void ReceiveDamage(int dmg)
+    {
+
+    }*/
     float dist;
     Vector3 hitPoint;
     void Shoot2(InputAction.CallbackContext context)
@@ -163,9 +174,15 @@ public class Player : MonoBehaviour
             velY = 5f;
         }
     }
+    void ActivateRobot(InputAction.CallbackContext context)
+    {
+        robotBomb.transform.position = this.transform.position + this.transform.forward * 2;
+        cam.gameObject.SetActive(false);
+        robotBomb.gameObject.SetActive(true);
+        action.Player.Disable();
+    }
     void ExitShoot2Func()
     {
-        Debug.Log("Arnau es gay");
         wait = false;
         StopAllCoroutines();
     }
